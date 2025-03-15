@@ -1,5 +1,5 @@
 import socketio
-from game import createGame, update_opponent_data, getCurrSnake
+from game import createGame, update_opponent_data, getCurrSnake, main
 import tkinter as tk  # Import tkinter in client.py
 import threading 
 import time
@@ -36,8 +36,17 @@ def match_started(data):
 
     def play():
         currSnake = getCurrSnake()
+        print("Current Coordinates: ", currSnake.getAllCoords() )
         if currSnake is not None:
             sio.emit("update_snake_position", {"room": room, "position": currSnake.getAllCoords()})
+        status = main()
+        if status['STATUS'] == "GAME-OVER":
+            print("SENT UPDATES TO SERVER. ")
+            print("You Lost!")
+
+            # update the server the game is over and current sid lost the match ... continue here ...
+            sio.emit("game_over", {"room": room, "loser": sio.sid})
+            return
         root.after(100, play)
     
     root.after(0, start_game)
