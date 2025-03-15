@@ -50,17 +50,15 @@ class Snake(object):
             x2 + self.vector[0] * SEG_SIZE, y2 + self.vector[1] * SEG_SIZE
         )
 
+        # for segment in self.segments:
+        #     segment.x, segment.y = self.c.coords(segment.instance)[:2]
+
     # Snake getting fatter: Adding a segment to the snake body
     def add_segment(self, color=None):
         last_seg = self.c.coords(self.segments[0].instance)
         x = last_seg[2] - SEG_SIZE
         y = last_seg[3] - SEG_SIZE
         self.segments.insert(0, Segment(x, y, color))
-
-    # Change of direction initiated by keyboard
-    # def change_direction(self, event):
-    #     if event.keysym in self.mapping:
-    #         self.vector = self.mapping[event.keysym]
             
     # Change of direction initiated by AI
     def change_direction_ai(self, direction):
@@ -74,15 +72,16 @@ class Snake(object):
     
     def getAllCoords(self):
         result = []
-        for s in self.segments:
+        for segment in self.segments:
             # print( '#################### THIS MUST WORK::::', s )
-            result.append( s.getCoords() )
+            real_coords = self.c.coords(segment.instance)
+            result.append( real_coords )
         return result
 
     def updateSnake(self, positions):
         self.reset_snake()
         new_segments = []
-        for x,y in positions:
+        for x,y,_,_ in positions:
             new_segments.append( Segment( self.c, x, y, "red"))
         self.segments = new_segments
 
@@ -90,13 +89,10 @@ def create_snake( c, color = None):
     posx = SEG_SIZE * random.randint(1, (WIDTH - SEG_SIZE) // SEG_SIZE)
     posy = SEG_SIZE * random.randint(1, (HEIGHT - SEG_SIZE) // SEG_SIZE)
     segments = [Segment( c, posx, posy, color), Segment( c, posx + SEG_SIZE, posy, color), Segment( c, posx + SEG_SIZE*2, posy, color)]
-    # print("%%%%%%%%%%%%%%%%%%%%% Prajwal I am creating the snake here", segments)
-    # for s in segments:
-    #     print( s.getCoords() )
     return Snake( c, segments, color)
 
-def main( c ):
-    global GAME_MODE, IN_GAME, APPLE, apple_posx, apple_posy, currSnake, opponentSnake
+def main():
+    global GAME_MODE, IN_GAME, APPLE, apple_posx, apple_posy, currSnake, opponentSnake, c
     currSnake.move()
     currSnakeCoors = c.coords(currSnake.segments[-1].instance)
 
@@ -122,31 +118,32 @@ def main( c ):
 
     # Check collisions for yellow snake
     if(
-        check_boundary_collision(currSnake) or 
+        check_boundary_collision(currSnakeCoors) or 
         check_self_collision(currSnake) or 
         ( opponentSnake is not None and check_snake_collision(currSnake, opponentSnake) )
     ):
         IN_GAME = False
-        # print("Snake DIED")
+        print("Snake DIED")
         game_over_text = c.create_text(WIDTH/2, HEIGHT/2, text="Game over!", font='Arial 20', fill='red', state='hidden')
-        c.itemconfigure(game_over_text, text="Yellow snake lost!", state='normal')
+        c.itemconfigure(game_over_text, text="Game Over! ", state='normal')
         return {
-            "STATUS": "GAME OVER"
+            "STATUS": "GAME-OVER"
         }
 
     direction = None
-    if random.randint(1, 20) == 1:
+    if random.randint(1, 10) == 1:
         direction = random.choice(["Up", "Down", "Right", "Left"])
         currSnake.change_direction_ai(direction)
                 
     
-    # Eating apples
     if currSnakeCoors == c.coords(APPLE):
         currSnake.add_segment()
         c.delete(APPLE)
         create_apple()
     
-    # root.after(100, main)
+    return {
+        "STATUS": "IN-GAME"
+    }
 
 def update_opponent_data(position):
     global opponentSnake
