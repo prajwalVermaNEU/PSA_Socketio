@@ -1,10 +1,16 @@
 import socketio
+from game import createGame, update_opponent_data, getCurrSnake
+import tkinter as tk  # Import tkinter in client.py
+import threading 
+import time
 
 SERVER_IP = "172.16.46.123"
-NU_ID = "002879993",
-MAIL_ID = "verma.praj@northeastern.edu",
+NU_ID = "002879993"
+MAIL_ID = "verma.praj@northeastern.edu"
 
 sio = socketio.Client()
+root = tk.Tk()
+root.title("PSA INFO 6205 Snake game")
 
 @sio.event
 def connect():
@@ -16,41 +22,54 @@ def disconnect():
 
 @sio.event
 def response(data):
-    print("Server response:", data)
+    print("INFORMATION: ", data)
 
-sio.connect(f"http://{SERVER_IP}:8000?NU_ID={NU_ID}&MAIL_ID={MAIL_ID}")
-# sio.connect(f"http://{SERVER_IP}:8000")
-sio.wait()
+@sio.on("MATCH_STARTED")
+def match_started(data):
+    print("YOUR MATCH STARTED!")
+    room = data["room"]
 
-# @sio.event
-# def chat(data):
-#     print(f"Client {data['sid']} says: {data['message']}")
+    def start_game():
+        global currSnake
+        createGame(root, data['APPLE_POS'])
+        root.after(100, play)
 
-# @sio.event
-# def user_connected(data):
-#     print(f"New client connected: {data['sid']}")
+    def play():
+        currSnake = getCurrSnake()
+        if currSnake is not None:
+            sio.emit("update_snake_position", {"room": room, "position": currSnake.getAllCoords()})
+        root.after(100, play)
+    
+    root.after(0, start_game)
 
-# @sio.event
-# def user_disconnected(data):
-#     print(f"Client {data['sid']} disconnected")
+@sio.on("opponent_snake_position")
+def update_opponent_snake(data):
+    """Update the opponent's snake position on our canvas."""
+    position = data["position"]
+    update_opponent_data(position)  
 
+def connect_to_server():
+    max_retries = 5
+    retry_delay = 2
 
+    for attempt in range(max_retries):
+        try:
+            print(f"🔗 Attempting to connect to {SERVER_IP}:8000... (Attempt {attempt + 1})")
+            sio.connect(f"http://{SERVER_IP}:8000?NU_ID={NU_ID}&MAIL_ID={MAIL_ID}")
+            print("✅ Connection Successful!")
+            sio.wait()
+            break
+        except socketio.exceptions.ConnectionError as e:
+            print(f"❌ Connection attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                print("Maximum retry attempts reached. Exiting connection attempts.")
 
-# Use the server's local IP instead of localhost
+# Client connection:
+socket_thread = threading.Thread(target=connect_to_server, daemon=True)
+socket_thread.start()
 
-
-# Send a message
-# sio.emit("message", {
-# })
-
-# Chat loop to send messages
-# while True:
-#     msg = input("You: ")
-#     if msg.lower() == "exit":
-#         sio.disconnect()
-#         break
-#     sio.emit("message", msg)
-
-# # Keep the connection open
-# sio.wait()
-
+root.mainloop()
