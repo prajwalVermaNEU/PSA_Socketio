@@ -59,6 +59,22 @@ async def update_snake_position( sid, data):
         "position": position
     }, room = room, skip_sid=sid)
 
+def getTheWiner( room, loser):
+    print(":Here I need to cone")
+
+
+@sio.event
+async def game_over( sid, data):
+    room = data["room"]
+    loser = data["loser"]
+
+    print("Game Over!")
+    await sio.event("game_result",{
+        "room":room,
+    }, room = room, skip_sid=sid)
+    winner = getTheWiner(room, loser)
+    await sio.leave_room(loser, room)
+    await sio.leave_room(winner, room)
 
 @sio.event
 async def connect(sid, env, *args):
@@ -97,4 +113,17 @@ async def response(sid, data):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+# Here are the things required to complete:
+
+# 1, notify the opponent that the game is over and then looser will be out of game and the winner till continue
+# 2. maintin the points to each of the winners
+# 3. finally when the match is over how to migrate it to the next match and thus if looser if there then close this thread
+# 4. for the winner we will continue
+# 5. finally close the tounament.
+# 6. Next phase we need to work over the UI where we can display the result.
+
 
