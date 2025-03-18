@@ -53,7 +53,7 @@ def match_started(data):
             return
         elif status['STATUS'] == "CREATE_APPLE":
             sio.emit("update_apple", {"room":room})
-        root.after( 50, play)
+        root.after( 100, play)
     
     root.after(0, start_game)
 
