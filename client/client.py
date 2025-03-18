@@ -4,8 +4,7 @@ import tkinter as tk  # Import tkinter in client.py
 import threading 
 import time
 
-SERVER_IP = "172.16.46.123"
-# SERVER_IP = "10.110.19.88"
+SERVER_IP = "10.110.79.140"
 NU_ID = "002879993"
 MAIL_ID = "verma.praj@northeastern.edu"
 
